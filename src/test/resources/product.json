@@ -1,0 +1,12 @@
+{
+  "name": "Samsung Galaxy",
+  "type": "mobile",
+  "price": 200,
+  "shipping": 50,
+  "upc": "mobile",
+  "description": "Latest Samsung phone",
+  "manufacturer": "Samsung",
+  "model": "Galaxy S25",
+  "url": "string",
+  "image": "string"
+}

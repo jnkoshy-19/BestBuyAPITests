@@ -1,0 +1,8 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="TestSuite" parallel="none">
+	<test name="Test" parallel="none">
+		<classes>
+			<class name= "bestbuyApiPlayground.tests.ProductsAPITests" />
+		</classes>
+	</test>
+</suite>
