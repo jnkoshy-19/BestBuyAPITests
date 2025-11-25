@@ -14,10 +14,7 @@ import org.testng.annotations.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import bestbuyApiPlayground.model.Product;
 import bestbuyApiPlayground.utils.FileUtilities;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -114,6 +111,16 @@ public class ProductsAPITests {
 		assertNotNull(response.jsonPath().getString("manufacturer"));
 		assertNotNull(response.jsonPath().getString("model"));
 	}
+	
+	@Test
+	public void testInvalidProduct() {
+		Reporter.log("Executing testInvalidProduct..", true);
+		Response response = RestAssured.given().when().get("/products/999999").then().extract().response();
+		assertNotNull(response.getBody());
+		Reporter.log(response.asPrettyString());
+		assertEquals(response.getStatusCode(), 404);
+	}
+	
 	@Test
 	public void verifyPostProducts() {
 		Reporter.log("Executing verifyPostProducts..", true);
@@ -167,6 +174,13 @@ public class ProductsAPITests {
 				.statusCode(201).log().all();
 
 	}
+	
+	@Test
+	public void verifyPostProductsWithInvalidPayload() {
+		Reporter.log("Executing verifyPostProductsWithInvalidPayload..", true);
+		RestAssured.given().when().contentType(ContentType.TEXT).body("invalid payload").post("/products").then()
+				.statusCode(400).log().all();
+	}
 
 	@Test
 	public void verifyPutProductsWithPayloadAsObject() {
@@ -219,13 +233,5 @@ public class ProductsAPITests {
 		RestAssured.given().when().get("/products/" + id).then().statusCode(404).log().body();
 
 	}
-	
-	@Test
-	public void testInvalidProduct() {
-		Reporter.log("Executing testInvalidProduct..", true);
-		Response response = RestAssured.given().when().get("/products/999999").then().extract().response();
-		assertNotNull(response.getBody());
-		Reporter.log(response.asPrettyString());
-		assertEquals(response.getStatusCode(), 404);
-	}
+
 }

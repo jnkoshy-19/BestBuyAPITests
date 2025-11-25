@@ -3,6 +3,7 @@
 	<test name="Test" parallel="none">
 		<classes>
 			<class name= "bestbuyApiPlayground.tests.ProductsAPITests" />
+			<class name= "bestbuyApiPlayground.tests.StoresAPITests" />
 		</classes>
 	</test>
 </suite>
