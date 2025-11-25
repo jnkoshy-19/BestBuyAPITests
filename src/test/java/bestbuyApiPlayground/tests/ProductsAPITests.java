@@ -1,5 +1,9 @@
 package bestbuyApiPlayground.tests;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,9 +12,16 @@ import org.testng.Reporter;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import bestbuyApiPlayground.model.Product;
 import bestbuyApiPlayground.utils.FileUtilities;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import io.restassured.response.Response;
 
 public class ProductsAPITests {
 
@@ -26,29 +37,112 @@ public class ProductsAPITests {
 	@Test
 	public void verifyGetProducts() {
 		Reporter.log("Executing verifyGetProducts..", true);
-		RestAssured.given().when().get("/products").then().statusCode(200).log().body();
+		Response response = RestAssured.given().when().get("/products").then().extract().response();
+		assertEquals(response.getStatusCode(), 200);
+		assertNotNull(response.getBody());
+		Reporter.log(response.asPrettyString());
+		assertTrue(response.jsonPath().getInt("total") > 0);
+		assertNotNull(response.jsonPath().getJsonObject("data"));
+		assertNotNull(response.jsonPath().getInt("data[0].id"));
+		assertNotNull(response.jsonPath().getString("data[0].name"));
+		assertNotNull(response.jsonPath().getString("data[0].type"));
+		assertNotNull(response.jsonPath().getDouble("data[0].price"));
+		assertNotNull(response.jsonPath().getString("data[0].upc"));
+		assertNotNull(response.jsonPath().getInt("data[0].shipping"));
+		assertNotNull(response.jsonPath().getString("data[0].description"));
+		assertNotNull(response.jsonPath().getString("data[0].manufacturer"));
+		assertNotNull(response.jsonPath().getString("data[0].model"));
 	}
 
 	@Test
-	public void verifyGetProductsWithLimit() {
+	public void verifyGetProductsWithLimit() throws JsonMappingException, JsonProcessingException {
 		Reporter.log("Executing verifyGetProductsWithLimit..", true);
-		RestAssured.given().when().queryParam("$limit", 5).get("/products").then().statusCode(200).log().body();
+		Response response = RestAssured.given().when().queryParam("$limit", 5).get("/products").then().extract()
+				.response();
+		assertEquals(response.getStatusCode(), 200);
+		assertNotNull(response.getBody());
+		Reporter.log(response.asPrettyString());
+		assertTrue(response.jsonPath().getInt("total") > 0);
+		assertNotNull(response.jsonPath().getJsonObject("data"));
+		assertEquals(response.jsonPath().getInt("limit"), 5);
+		assertNotNull(response.jsonPath().getInt("data[0].id"));
+		assertNotNull(response.jsonPath().getString("data[0].name"));
+		assertNotNull(response.jsonPath().getString("data[0].type"));
+		assertNotNull(response.jsonPath().getDouble("data[0].price"));
+		assertNotNull(response.jsonPath().getString("data[0].upc"));
+		assertNotNull(response.jsonPath().getInt("data[0].shipping"));
+		assertNotNull(response.jsonPath().getString("data[0].description"));
+		assertNotNull(response.jsonPath().getString("data[0].manufacturer"));
+		assertNotNull(response.jsonPath().getString("data[0].model"));
 	}
 
 	@Test
 	public void verifyGetProductsWithSpecificId() {
 		Reporter.log("Executing verifyGetProductsWithSpecificId..", true);
-		RestAssured.given().when().param("id", 185230).get("/products").then().statusCode(200).log().body();
+		Response response = RestAssured.given().when().param("id", 185230).get("/products").then().extract().response();
+		assertEquals(response.getStatusCode(), 200);
+		assertNotNull(response.getBody());
+		Reporter.log(response.asPrettyString());
+		assertEquals(1, response.jsonPath().getInt("total"));
+		assertNotNull(response.jsonPath().getJsonObject("data"));
+		assertNotNull(response.jsonPath().getInt("data[0].id"));
+		assertEquals(response.jsonPath().getInt("data[0].id"), 185230);
+		assertNotNull(response.jsonPath().getString("data[0].name"));
+		assertNotNull(response.jsonPath().getString("data[0].type"));
+		assertNotNull(response.jsonPath().getDouble("data[0].price"));
+		assertNotNull(response.jsonPath().getString("data[0].upc"));
+		assertNotNull(response.jsonPath().getInt("data[0].shipping"));
+		assertNotNull(response.jsonPath().getString("data[0].description"));
+		assertNotNull(response.jsonPath().getString("data[0].manufacturer"));
+		assertNotNull(response.jsonPath().getString("data[0].model"));
 	}
-
+	@Test
+	public void testValidProduct() {
+		Reporter.log("Executing testValidProduct..", true);
+		Response response = RestAssured.given().when().get("/products/185230").then().extract().response();
+		assertNotNull(response.getBody());
+		Reporter.log(response.asPrettyString());
+		assertEquals(response.getStatusCode(), 200);
+		assertNotNull(response.jsonPath().getInt("id"));
+		assertEquals(response.jsonPath().getInt("id"), 185230);
+		assertNotNull(response.jsonPath().getString("name"));
+		assertNotNull(response.jsonPath().getString("type"));
+		assertNotNull(response.jsonPath().getDouble("price"));
+		assertNotNull(response.jsonPath().getString("upc"));
+		assertNotNull(response.jsonPath().getInt("shipping"));
+		assertNotNull(response.jsonPath().getString("description"));
+		assertNotNull(response.jsonPath().getString("manufacturer"));
+		assertNotNull(response.jsonPath().getString("model"));
+	}
 	@Test
 	public void verifyPostProducts() {
 		Reporter.log("Executing verifyPostProducts..", true);
 		StringBuilder jsonString = new StringBuilder();
 		try {
 			jsonString.append(fileUtilities.readFile("src/test/resources/product.json"));
-			RestAssured.given().when().contentType(ContentType.JSON).body(jsonString.toString()).post("/products")
-					.then().statusCode(201).log().all();
+			Response response = RestAssured.given().when().contentType(ContentType.JSON).body(jsonString.toString())
+					.post("/products").then().extract().response();
+			assertEquals(response.getStatusCode(), 201);
+			assertNotNull(response.getBody());
+			Reporter.log(response.asPrettyString());
+			
+			assertNotNull(response.jsonPath().getInt("id"));
+			assertNotNull(response.jsonPath().getString("name"));
+			assertEquals("Samsung Galaxy", response.jsonPath().getString("name"));
+			assertNotNull(response.jsonPath().getString("type"));
+			assertEquals("mobile", response.jsonPath().getString("type"));
+			assertNotNull(response.jsonPath().getDouble("price"));
+			assertEquals(200, response.jsonPath().getDouble("price"));
+			assertNotNull(response.jsonPath().getString("upc"));
+			assertEquals("mobile", response.jsonPath().getString("upc"));
+			assertNotNull(response.jsonPath().getInt("shipping"));
+			assertEquals(50, response.jsonPath().getInt("shipping"));
+			assertNotNull(response.jsonPath().getString("description"));
+			assertEquals("Latest Samsung phone", response.jsonPath().getString("description"));
+			assertNotNull(response.jsonPath().getString("manufacturer"));
+			assertEquals("Samsung", response.jsonPath().getString("manufacturer"));
+			assertNotNull(response.jsonPath().getString("model"));
+			assertEquals("Galaxy S25", response.jsonPath().getString("model"));
 
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -87,8 +181,8 @@ public class ProductsAPITests {
 		requestPayload.put("manufacturer", "Apple");
 		requestPayload.put("model", "iPhone 17");
 
-		int id = RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload).post("/products").then().log().all()
-				.extract().path("id");
+		int id = RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload).post("/products").then()
+				.log().all().extract().path("id");
 
 		Map<String, Object> requestPayload1 = new HashMap<String, Object>();
 		requestPayload1.put("name", "iPhone 17 Pro");
@@ -104,6 +198,7 @@ public class ProductsAPITests {
 				.statusCode(200).log().all();
 
 	}
+
 	@Test
 	public void verifyDeleteProduct() {
 		Reporter.log("Executing verifyDeleteProduct..", true);
@@ -117,12 +212,20 @@ public class ProductsAPITests {
 		requestPayload.put("manufacturer", "Apple");
 		requestPayload.put("model", "iPhone 17");
 
-		int id = RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload).post("/products").then().log().all()
-				.extract().path("id");
-
+		int id = RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload).post("/products").then()
+				.log().all().extract().path("id");
 
 		RestAssured.given().when().delete("/products/" + id).then().statusCode(200).log().all();
 		RestAssured.given().when().get("/products/" + id).then().statusCode(404).log().body();
 
+	}
+	
+	@Test
+	public void testInvalidProduct() {
+		Reporter.log("Executing testInvalidProduct..", true);
+		Response response = RestAssured.given().when().get("/products/999999").then().extract().response();
+		assertNotNull(response.getBody());
+		Reporter.log(response.asPrettyString());
+		assertEquals(response.getStatusCode(), 404);
 	}
 }
