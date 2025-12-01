@@ -1,8 +1,11 @@
 package bestbuyApiPlayground.tests;
 
+import static io.restassured.module.jsv.JsonSchemaValidator.matchesJsonSchemaInClasspath;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
 
 import java.io.IOException;
 
@@ -17,7 +20,7 @@ import io.restassured.response.Response;
 
 public class StoresAPITests {
 	FileUtilities fileUtilities;
-	
+
 	@BeforeClass
 	public void setUp() {
 		RestAssured.baseURI = "http://localhost/";
@@ -28,43 +31,23 @@ public class StoresAPITests {
 	@Test
 	public void verifyGetStores() {
 		Reporter.log("Executing verifyGetStores..", true);
-		Response response = RestAssured.given().when().get("/stores").then().extract().response();
-		assertEquals(response.getStatusCode(), 200);
-		assertNotNull(response.getBody());
-		Reporter.log(response.asPrettyString());
-		assertTrue(response.jsonPath().getInt("total") > 0);
-		assertNotNull(response.jsonPath().getJsonObject("data"));
-		assertNotNull(response.jsonPath().getInt("data[0].id"));
-		assertNotNull(response.jsonPath().getString("data[0].name"));
-		assertNotNull(response.jsonPath().getString("data[0].type"));
-		assertNotNull(response.jsonPath().getString("data[0].address"));
-		assertNotNull(response.jsonPath().getString("data[0].city"));
-		assertNotNull(response.jsonPath().getString("data[0].state"));
-		assertNotNull(response.jsonPath().getString("data[0].zip"));
+		RestAssured.given().when().get("/stores").then().assertThat().statusCode(200).body("total", greaterThan(0))
+				.body("data", notNullValue()).body("data[0].id", notNullValue()).body("data[0].name", notNullValue())
+				.body("data[0].type", notNullValue()).body("data[0].address", notNullValue())
+				.body("data[0].city", notNullValue()).body("data[0].state", notNullValue())
+				.body("data[0].zip", notNullValue()).log().all();
 	}
-	
+
 	@Test
 	public void verifyGetStoreForSpecificId() {
 		Reporter.log("Executing verifyGetStoreForSpecificId..", true);
-		Response response = RestAssured.given().when().get("/stores/4").then().extract().response();
-		assertEquals(response.getStatusCode(), 200);
-		assertNotNull(response.getBody());
-		Reporter.log(response.asPrettyString());
-		assertNotNull(response.jsonPath().getInt("id"));
-		assertNotNull(response.jsonPath().getString("name"));
-		assertEquals("Minnetonka", response.jsonPath().getString("name"));
-		assertNotNull(response.jsonPath().getString("type"));
-		assertEquals("BigBox", response.jsonPath().getString("type"));
-		assertNotNull(response.jsonPath().getString("address"));
-		assertEquals("13513 Ridgedale Dr", response.jsonPath().getString("address"));
-		assertNotNull(response.jsonPath().getString("city"));
-		assertEquals("Hopkins", response.jsonPath().getString("city"));
-		assertNotNull(response.jsonPath().getString("state"));
-		assertEquals("MN", response.jsonPath().getString("state"));
-		assertNotNull(response.jsonPath().getString("zip"));
-		assertEquals("55305", response.jsonPath().getString("zip"));
+		RestAssured.given().when().get("/stores/4").then().assertThat().statusCode(200)
+				.body(matchesJsonSchemaInClasspath("schemas/store-schema.json")).body("id", notNullValue())
+				.body("name", equalTo("Minnetonka")).body("type", equalTo("BigBox"))
+				.body("address", equalTo("13513 Ridgedale Dr")).body("city", equalTo("Hopkins"))
+				.body("state", equalTo("MN")).body("zip", equalTo("55305")).log().all();
 	}
-	
+
 	@Test
 	public void testInvalidStore() {
 		Reporter.log("Executing testInvalidStore..", true);
@@ -73,32 +56,19 @@ public class StoresAPITests {
 		Reporter.log(response.asPrettyString());
 		assertEquals(response.getStatusCode(), 404);
 	}
-	
+
 	@Test
 	public void verifyPostStores() {
 		Reporter.log("Executing verifyPostStores..", true);
 		StringBuilder jsonString = new StringBuilder();
 		try {
 			jsonString.append(fileUtilities.readFile("src/test/resources/store.json"));
-			Response response = RestAssured.given().when().contentType(ContentType.JSON).body(jsonString.toString())
-					.post("/stores").then().extract().response();
-			assertEquals(response.getStatusCode(), 201);
-			assertNotNull(response.getBody());
-			Reporter.log(response.asPrettyString());
-			
-			assertNotNull(response.jsonPath().getInt("id"));
-			assertNotNull(response.jsonPath().getString("name"));
-			assertEquals("CityStore", response.jsonPath().getString("name"));
-			assertNotNull(response.jsonPath().getString("type"));
-			assertEquals("BigBox", response.jsonPath().getString("type"));
-			assertNotNull(response.jsonPath().getString("address"));
-			assertEquals("WhiteMarsh Drive", response.jsonPath().getString("address"));
-			assertNotNull(response.jsonPath().getString("city"));
-			assertEquals("Philly", response.jsonPath().getString("city"));
-			assertNotNull(response.jsonPath().getString("state"));
-			assertEquals("PA", response.jsonPath().getString("state"));
-			assertNotNull(response.jsonPath().getString("zip"));
-			assertEquals("19000", response.jsonPath().getString("zip"));
+			RestAssured.given().when().contentType(ContentType.JSON).body(jsonString.toString()).post("/stores").then()
+					.assertThat().statusCode(201).body("id", notNullValue()).body("name", equalTo("CityStore"))
+					.body("type", equalTo("BigBox")).body("address", equalTo("WhiteMarsh Drive"))
+					.body("city", equalTo("Philly")).body("state", equalTo("PA")).body("zip", equalTo("19000")).log()
+					.all();
+
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
