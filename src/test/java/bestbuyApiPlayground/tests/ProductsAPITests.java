@@ -11,7 +11,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.testng.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -24,7 +25,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
 public class ProductsAPITests {
-
+	private static final Logger logger = LoggerFactory.getLogger(ProductsAPITests.class);
 	FileUtilities fileUtilities;
 
 	@BeforeClass
@@ -36,58 +37,62 @@ public class ProductsAPITests {
 
 	@Test
 	public void verifyGetProducts() {
-		Reporter.log("Executing verifyGetProducts..", true);
-		RestAssured.given().when().get("/products").then().assertThat().statusCode(200).body("total", greaterThan(0))
+		logger.info("Executing verifyGetProducts..", true);
+		Response response = RestAssured.given().when().get("/products").then().assertThat().statusCode(200).body("total", greaterThan(0))
 				.body("data", notNullValue()).body("data[0].id", notNullValue()).body("data[0].name", notNullValue())
 				.body("data[0].type", notNullValue()).body("data[0].price", notNullValue())
 				.body("data[0].shipping", notNullValue()).body("data[0].description", notNullValue())
-				.body("data[0].manufacturer", notNullValue()).body("data[0].model", notNullValue()).log().body();
+				.body("data[0].manufacturer", notNullValue()).body("data[0].model", notNullValue()).extract().response();
+		logger.debug(response.asPrettyString());
 	}
 
 	@Test
 	public void verifyGetProductsWithLimit() throws JsonMappingException, JsonProcessingException {
-		Reporter.log("Executing verifyGetProductsWithLimit..", true);
-		RestAssured.given().when().queryParam("$limit", 5).get("/products").then().assertThat()
+		logger.info("Executing verifyGetProductsWithLimit..", true);
+		Response response = RestAssured.given().when().queryParam("$limit", 5).get("/products").then().assertThat()
 				.body("total", greaterThan(0)).body("limit", equalTo(5)).body("data", notNullValue())
 				.body("data[0].id", notNullValue()).body("data[0].name", notNullValue())
 				.body("data[0].type", notNullValue()).body("data[0].price", notNullValue())
 				.body("data[0].shipping", notNullValue()).body("data[0].description", notNullValue())
-				.body("data[0].manufacturer", notNullValue()).body("data[0].model", notNullValue()).log().body();
+				.body("data[0].manufacturer", notNullValue()).body("data[0].model", notNullValue()).extract().response();
+		logger.debug(response.asPrettyString());
 	}
 
 	@Test
 	public void verifyGetProductsWithSpecificId() {
-		Reporter.log("Executing verifyGetProductsWithSpecificId..", true);
-		RestAssured.given().when().param("id", 185230).get("/products").then().assertThat().body("total", equalTo(1))
+		logger.info("Executing verifyGetProductsWithSpecificId..", true);
+		Response response = RestAssured.given().when().param("id", 185230).get("/products").then().assertThat().body("total", equalTo(1))
 				.body("data", notNullValue()).body("data[0].id", notNullValue()).body("data[0].id", equalTo(185230))
 				.body("data[0].name", notNullValue()).body("data[0].type", notNullValue())
 				.body("data[0].price", notNullValue()).body("data[0].shipping", notNullValue())
 				.body("data[0].description", notNullValue()).body("data[0].manufacturer", notNullValue())
-				.body("data[0].model", notNullValue()).log().body();
+				.body("data[0].model", notNullValue()).extract().response();
+		logger.debug(response.asPrettyString());
 	}
 
 	@Test
 	public void testValidProduct() {
-		Reporter.log("Executing testValidProduct..", true);
-		RestAssured.given().when().get("/products/185230").then().assertThat().statusCode(200)
+		logger.info("Executing testValidProduct..", true);
+		Response response = RestAssured.given().when().get("/products/185230").then().assertThat().statusCode(200)
 				.body("id", notNullValue()).body("id", equalTo(185230)).body("name", notNullValue())
 				.body("type", notNullValue()).body("price", notNullValue()).body("upc", notNullValue())
 				.body("shipping", notNullValue()).body(matchesJsonSchemaInClasspath("schemas/products-schema.json"))
-				.log().body();
+				.extract().response();
+		logger.debug(response.asPrettyString());
 	}
 
 	@Test
 	public void testInvalidProduct() {
-		Reporter.log("Executing testInvalidProduct..", true);
+		logger.info("Executing testInvalidProduct..", true);
 		Response response = RestAssured.given().when().get("/products/999999").then().extract().response();
 		assertNotNull(response.getBody());
-		Reporter.log(response.asPrettyString());
+		logger.debug(response.asPrettyString());
 		assertEquals(response.getStatusCode(), 404);
 	}
 
 	@Test
 	public void verifyPostProducts() {
-		Reporter.log("Executing verifyPostProducts..", true);
+		logger.info("Executing verifyPostProducts..", true);
 		StringBuilder jsonString = new StringBuilder();
 		try {
 			jsonString.append(fileUtilities.readFile("src/test/resources/product.json"));
@@ -107,7 +112,7 @@ public class ProductsAPITests {
 
 	@Test
 	public void verifyPostProductsWithPayloadAsObject() {
-		Reporter.log("Executing verifyPostProductsWithPayloadAsObject..", true);
+		logger.info("Executing verifyPostProductsWithPayloadAsObject..", true);
 		Map<String, Object> requestPayload = new HashMap<String, Object>();
 		requestPayload.put("name", "iPhone 17");
 		requestPayload.put("type", "mobile");
@@ -118,21 +123,23 @@ public class ProductsAPITests {
 		requestPayload.put("manufacturer", "Apple");
 		requestPayload.put("model", "iPhone 17");
 
-		RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload).post("/products").then()
-				.assertThat().statusCode(201).log().all();
+		Response response = RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload).post("/products").then()
+				.assertThat().statusCode(201).extract().response();
+		logger.debug(response.asPrettyString());
 
 	}
 
 	@Test
 	public void verifyPostProductsWithInvalidPayload() {
-		Reporter.log("Executing verifyPostProductsWithInvalidPayload..", true);
-		RestAssured.given().when().contentType(ContentType.TEXT).body("invalid payload").post("/products").then()
-				.assertThat().statusCode(400).log().all();
+		logger.info("Executing verifyPostProductsWithInvalidPayload..", true);
+		Response response = RestAssured.given().when().contentType(ContentType.TEXT).body("invalid payload").post("/products").then()
+				.assertThat().statusCode(400).extract().response();
+		logger.debug(response.asPrettyString());
 	}
 
 	@Test
 	public void verifyPutProductsWithPayloadAsObject() {
-		Reporter.log("Executing verifyPutProductsWithPayloadAsObject..", true);
+		logger.info("Executing verifyPutProductsWithPayloadAsObject..", true);
 		Map<String, Object> requestPayload = new HashMap<String, Object>();
 		requestPayload.put("name", "iPhone 17");
 		requestPayload.put("type", "mobile");
@@ -156,14 +163,15 @@ public class ProductsAPITests {
 		requestPayload1.put("manufacturer", "Apple");
 		requestPayload1.put("model", "iPhone 17 Pro");
 
-		RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload1).put("/products/" + id).then()
-				.statusCode(200).log().all();
+		Response response = RestAssured.given().when().contentType(ContentType.JSON).body(requestPayload1).put("/products/" + id).then()
+				.statusCode(200).extract().response();
+		logger.debug(response.asPrettyString());
 
 	}
 
 	@Test
 	public void verifyDeleteProduct() {
-		Reporter.log("Executing verifyDeleteProduct..", true);
+		logger.info("Executing verifyDeleteProduct..", true);
 		Map<String, Object> requestPayload = new HashMap<String, Object>();
 		requestPayload.put("name", "iPhone 17");
 		requestPayload.put("type", "mobile");

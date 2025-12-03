@@ -9,7 +9,8 @@ import static org.testng.Assert.assertNotNull;
 
 import java.io.IOException;
 
-import org.testng.Reporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
@@ -19,6 +20,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 
 public class StoresAPITests {
+	private static final Logger logger = LoggerFactory.getLogger(StoresAPITests.class);
 	FileUtilities fileUtilities;
 
 	@BeforeClass
@@ -30,7 +32,7 @@ public class StoresAPITests {
 
 	@Test
 	public void verifyGetStores() {
-		Reporter.log("Executing verifyGetStores..", true);
+		logger.info("Executing verifyGetStores..", true);
 		RestAssured.given().when().get("/stores").then().assertThat().statusCode(200).body("total", greaterThan(0))
 				.body("data", notNullValue()).body("data[0].id", notNullValue()).body("data[0].name", notNullValue())
 				.body("data[0].type", notNullValue()).body("data[0].address", notNullValue())
@@ -40,7 +42,7 @@ public class StoresAPITests {
 
 	@Test
 	public void verifyGetStoreForSpecificId() {
-		Reporter.log("Executing verifyGetStoreForSpecificId..", true);
+		logger.info("Executing verifyGetStoreForSpecificId..", true);
 		RestAssured.given().when().get("/stores/4").then().assertThat().statusCode(200)
 				.body(matchesJsonSchemaInClasspath("schemas/store-schema.json")).body("id", notNullValue())
 				.body("name", equalTo("Minnetonka")).body("type", equalTo("BigBox"))
@@ -50,16 +52,16 @@ public class StoresAPITests {
 
 	@Test
 	public void testInvalidStore() {
-		Reporter.log("Executing testInvalidStore..", true);
+		logger.info("Executing testInvalidStore..", true);
 		Response response = RestAssured.given().when().get("/stores/999999").then().extract().response();
 		assertNotNull(response.getBody());
-		Reporter.log(response.asPrettyString());
+		logger.info(response.asPrettyString());
 		assertEquals(response.getStatusCode(), 404);
 	}
 
 	@Test
 	public void verifyPostStores() {
-		Reporter.log("Executing verifyPostStores..", true);
+		logger.info("Executing verifyPostStores..", true);
 		StringBuilder jsonString = new StringBuilder();
 		try {
 			jsonString.append(fileUtilities.readFile("src/test/resources/store.json"));
