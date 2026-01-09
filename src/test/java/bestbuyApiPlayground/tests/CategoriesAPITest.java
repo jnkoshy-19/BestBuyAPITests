@@ -48,4 +48,16 @@ public class CategoriesAPITest {
 		logger.debug(response.asPrettyString());
 	}
 
+	@Test
+	public void verifyGetCategoriesWithSpecificId() {
+		logger.info("Executing verifyGetCategoriesWithSpecificId..", true);
+		Response response = RestAssured.given().when().param("id", "abcat0102005").get("/categories").then()
+				.assertThat().body("total", equalTo(1)).body("data", notNullValue()).body("data[0].id", notNullValue())
+				.body("data[0].id", equalTo("abcat0102005")).body("data[0].name", notNullValue())
+				.body("data[0].createdAt", notNullValue()).body("data[0].updatedAt", notNullValue())
+				.body("data[0].subCategories", notNullValue()).body("data[0].categoryPath", notNullValue()).extract()
+				.response();
+		logger.debug(response.asPrettyString());
+	}
+
 }
